@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Description: Lambda to read s3 events
+
+Globals:
+  Function:
+    Timeout: 300
+
+Parameters:
+  
+  TableName:
+    Description: Dynamodb Table name
+    Type: String
+    Default: Books
+    
+Resources:
+  LambdaExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'sts:AssumeRole'
+            Principal:
+              Service: lambda.amazonaws.com
+      Policies:
+      - PolicyName: ec2-service-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              Resource: '*'
+
+  BookAPILambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: book-api
+      CodeUri: ../src/
+      Handler: main
+      Runtime: go1.x
+      Role: !GetAtt LambdaExecRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Events: 
+        GetBook:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+        PostBook:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+      
+      Tags:
+        ResourceType: lambda
+        
+  DBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      
+      AttributeDefinitions:
+        - AttributeName: ISBN
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ISBN
+          KeyType: HASH
+      # BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: !Ref TableName
+      Tags:
+        - Key: TableName 
+          Value: Book
+Outputs:
+  TableName:
+    Value: !Ref DBTable
+    Description: Table name of the newly created DynamoDB table
