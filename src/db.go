@@ -82,3 +82,34 @@ func putItem(bk *Book) error {
 	_, err := db.PutItem(input)
 	return err
 }
+
+// Get all book records.
+func scanAll() ([]Book, error) {
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(os.Getenv("AWS_REGION"))}),
+	)
+	var db = dynamodb.New(sess)
+
+	params := &dynamodb.ScanInput{
+		TableName: aws.String(os.Getenv("TABLE_NAME")),
+	}
+
+	results, err := db.Scan(params)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	books := []Book{}
+
+	// Unmarshall all Items
+	err = dynamodbattribute.UnmarshalListOfMaps(results.Items, &books)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return books, nil
+
+}

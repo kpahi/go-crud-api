@@ -36,6 +36,7 @@ Resources:
               Action:
               - dynamodb:PutItem
               - dynamodb:GetItem
+              - dynamodb:Scan
               Resource: '*'
 
   BookAPILambda:

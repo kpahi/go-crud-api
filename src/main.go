@@ -10,16 +10,24 @@ import (
 	"encoding/json"
 )
 
+// Book test
 type Book struct {
-	ISBN   string `json:isbn`
-	Title  string `json:title`
-	Author string `json:string`
+	ISBN   string `json:"isbn"`
+	Title  string `json:"title"`
+	Author string `json:"string"`
 }
 
 func router(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	switch req.HTTPMethod {
 	case "GET":
-		return show(req)
+		if isbn := req.QueryStringParameters["isbn"]; isbn != "" {
+			fmt.Println("Requesting ISBN: ", isbn)
+			return show(req)
+		} else {
+			fmt.Println("Showing all records.")
+			return getAll()
+		}
+
 	case "POST":
 		return create(req)
 	default:
@@ -28,6 +36,22 @@ func router(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, 
 			Body:       http.StatusText(http.StatusMethodNotAllowed),
 		}, nil
 	}
+}
+
+func getAll() (events.APIGatewayProxyResponse, error) {
+	bk, err := scanAll()
+	js, err := json.Marshal(bk)
+
+	if err != nil {
+		fmt.Println("Error Marshalling")
+		fmt.Println(err.Error())
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(js),
+	}, nil
+
 }
 
 func show(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
