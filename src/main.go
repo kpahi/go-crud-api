@@ -14,7 +14,7 @@ import (
 type Book struct {
 	ISBN   string `json:"isbn"`
 	Title  string `json:"title"`
-	Author string `json:"string"`
+	Author string `json:"author"`
 }
 
 func router(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
